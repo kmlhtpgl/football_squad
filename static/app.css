@@ -1,0 +1,91 @@
+:root{
+  --bg:#f6f7fb;
+  --card:#ffffff;
+  --border:#e6e8f0;
+  --text:#0f172a;
+  --muted:#64748b;
+  --accent:#2563eb;
+  --accent2:#22c55e;
+  --danger:#ef4444;
+  --shadow: 0 10px 30px rgba(2,8,23,.08);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+  background: linear-gradient(180deg, #f8fafc, var(--bg));
+  color:var(--text);
+}
+a{color:var(--accent);text-decoration:none;font-weight:650}
+a:hover{text-decoration:underline}
+
+.container{max-width:1000px;margin:0 auto;padding:18px}
+
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  background:var(--card); border:1px solid var(--border);
+  border-radius:16px; padding:12px 14px; box-shadow:var(--shadow);
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:20px}
+.nav{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px;
+  margin:14px 0;
+  box-shadow:var(--shadow);
+}
+
+.h1{font-size:26px;font-weight:900;margin:0}
+.h2{font-size:18px;font-weight:900;margin:0 0 10px}
+.muted, small{color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.split{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+
+.pill{
+  display:inline-flex;gap:8px;align-items:center;
+  padding:7px 12px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:#f8fafc;
+  font-weight:700;
+}
+
+input,select{
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:#fff;
+  color:var(--text);
+  outline:none;
+}
+input::placeholder{color:#94a3b8}
+
+button{
+  padding:10px 14px;
+  border-radius:12px;
+  border:0;
+  cursor:pointer;
+  font-weight:900;
+  color:white;
+  background: linear-gradient(135deg, var(--accent), #1d4ed8);
+}
+button:hover{filter:brightness(1.02);transform:translateY(-1px)}
+button.ghost{
+  background:#fff;
+  color:var(--text);
+  border:1px solid var(--border);
+}
+button.success{
+  background: linear-gradient(135deg, var(--accent2), #16a34a);
+}
+button.danger{
+  background: linear-gradient(135deg, var(--danger), #dc2626);
+}
+
+table{width:100%;border-collapse:collapse}
+td,th{padding:10px;border-bottom:1px solid var(--border);text-align:left}
+hr{border:0;height:1px;background:var(--border);margin:14px 0}

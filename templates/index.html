@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Squad{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <div class="split">
+      <div>
+        <div class="h2">Match details</div>
+        <div><b>When:</b> {{match_date_text}} · {{schedule.time_text}}</div>
+        <div><b>Where:</b> {{match.location}}</div>
+        <div><b>Total cost:</b> £{{match.total_cost}}</div>
+      </div>
+
+      <form method="get" action="/" class="row">
+        <span class="pill">Week</span>
+        <select name="week" onchange="this.form.submit()">
+          {% for w in weeks %}
+            <option value="{{w.value}}" {% if w.value==selected_week %}selected{% endif %}>
+              {{w.label}}
+            </option>
+          {% endfor %}
+        </select>
+
+      </form>
+    </div>
+
+    <hr>
+
+    <div class="row">
+      <span class="pill"><b>Confirmed:</b> {{confirmed_count}} / {{max_players}}</span>
+      <span class="pill"><b>Waitlist:</b> {{waitlist_count}}</span>
+      <span class="pill"><b>Cost per confirmed:</b> £{{cost_per}}</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="h2">Join / Leave</div>
+
+    {% if user %}
+      <form class="row" method="post" action="/join">
+        <input type="hidden" name="week" value="{{selected_week}}"/>
+        <button class="success" type="submit" {% if not match.is_open %}disabled{% endif %}>
+          Join as {{user.display_name}}
+        </button>
+      </form>
+
+      <form class="row" method="post" action="/leave" style="margin-top:10px">
+        <input type="hidden" name="week" value="{{selected_week}}"/>
+        <button class="ghost" type="submit" {% if not match.is_open %}disabled{% endif %}>
+          Leave
+        </button>
+      </form>
+    {% else %}
+      <p class="muted">Login is required to join/leave so we can track matches played & payments.</p>
+      <div class="row">
+        <a class="pill" href="/login?next={{request_path}}">Login</a>
+        <a class="pill" href="/signup?next={{request_path}}">Sign up</a>
+      </div>
+    {% endif %}
+
+    <hr>
+
+    <div class="row">
+      <a class="pill" href="/history">History</a>
+      <a class="pill" href="/month/{{selected_week[:7]}}">This month totals</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="h2">Confirmed Squad</div>
+    {% if confirmed %}
+      <ol>
+        {% for s in confirmed %}
+          <li>{{s.name}}</li>
+        {% endfor %}
+      </ol>
+    {% else %}
+      <p class="muted">No one yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="h2">Waitlist</div>
+    {% if waitlist %}
+      <ol>
+        {% for s in waitlist %}
+          <li>{{s.name}}</li>
+        {% endfor %}
+      </ol>
+      <small class="muted">When a confirmed player leaves, the first waitlist player is promoted automatically.</small>
+    {% else %}
+      <p class="muted">No waitlist.</p>
+    {% endif %}
+  </div>
+    <div class="card">
+    <div class="split">
+      <div>
+        <div class="h2">Lineups</div>
+        <small class="muted">Auto-balanced using levels + preferred positions.</small>
+      </div>
+      <a class="pill" href="/lineup.png?week={{selected_week}}">Open image</a>
+    </div>
+
+    <hr>
+
+    <img
+      src="/lineup.png?week={{selected_week}}"
+      style="max-width:100%;border-radius:16px;border:1px solid var(--border)"
+      alt="Lineups"
+    >
+  </div>
+
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Monthly totals{% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="h2">Totals for {{yyyymm}}</div>
+    <small class="muted">Total owed per player (confirmed only).</small>
+  </div>
+
+  <div class="card">
+    {% if items %}
+      <table>
+        <tr><th>Name</th><th>Total</th></tr>
+        {% for name, amt in items %}
+          <tr><td>{{name}}</td><td>£{{amt}}</td></tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <p class="muted">No games in this month yet.</p>
+    {% endif %}
+  </div>
+{% endblock %}

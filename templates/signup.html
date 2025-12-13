@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Sign up{% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="h2">Create account</div>
+
+    <form method="post" action="/signup" class="row">
+      <input type="hidden" name="next" value="{{next}}"/>
+      <input name="name" placeholder="Name" required>
+      <input name="pin" type="password" placeholder="PIN (4+ digits)" required>
+
+      {% if invite_required %}
+        <input name="invite" placeholder="Invite code" required>
+      {% else %}
+        <input type="hidden" name="invite" value="">
+      {% endif %}
+
+      <button type="submit">Sign up</button>
+    </form>
+
+    <hr>
+    <small class="muted">Already have an account? <a href="/login?next={{next}}">Login</a></small>
+  </div>
+{% endblock %}

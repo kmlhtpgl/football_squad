@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="h2">Login</div>
+
+    <form method="post" action="/login" class="row">
+      <input type="hidden" name="next" value="{{next}}"/>
+      <input name="name" placeholder="Name" required>
+      <input name="pin" type="password" placeholder="PIN" required>
+      <button type="submit">Login</button>
+    </form>
+
+    <hr>
+    <small class="muted">No account? <a href="/signup?next={{next}}">Sign up</a></small>
+  </div>
+{% endblock %}

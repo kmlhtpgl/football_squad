@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="h2">Admin · Weekly defaults</div>
+    <div class="row">
+      <a class="pill" href="/admin/users?key={{key}}">Users</a>
+      <a class="pill" href="/admin/week?key={{key}}&week={{today_week}}">This week admin</a>
+    </div>
+    <hr>
+
+    <form method="post" action="/admin/schedule" class="row">
+      <input type="hidden" name="key" value="{{key}}">
+
+      <input name="title" value="{{schedule.title}}" placeholder="Title">
+      <input name="default_cost" type="number" value="{{schedule.default_cost}}" style="width:140px">
+      <input name="location" value="{{schedule.location}}" placeholder="Location">
+      <input name="time_text" value="{{schedule.time_text}}" placeholder="20:00" style="width:120px">
+
+      <select name="weekday">
+        <option value="0" {% if schedule.weekday==0 %}selected{% endif %}>Mon</option>
+        <option value="1" {% if schedule.weekday==1 %}selected{% endif %}>Tue</option>
+        <option value="2" {% if schedule.weekday==2 %}selected{% endif %}>Wed</option>
+        <option value="3" {% if schedule.weekday==3 %}selected{% endif %}>Thu</option>
+        <option value="4" {% if schedule.weekday==4 %}selected{% endif %}>Fri</option>
+        <option value="5" {% if schedule.weekday==5 %}selected{% endif %}>Sat</option>
+        <option value="6" {% if schedule.weekday==6 %}selected{% endif %}>Sun</option>
+      </select>
+
+      <input name="max_players" type="number" value="{{schedule.max_players}}" style="width:140px">
+
+      <select name="waitlist_enabled">
+        <option value="1" {% if schedule.waitlist_enabled %}selected{% endif %}>Waitlist On</option>
+        <option value="0" {% if not schedule.waitlist_enabled %}selected{% endif %}>Waitlist Off</option>
+      </select>
+
+      <button type="submit">Save</button>
+    </form>
+
+    <small class="muted">Admin link stays private: <b>/admin?key=YOUR_ADMIN_KEY</b></small>
+  </div>
+{% endblock %}

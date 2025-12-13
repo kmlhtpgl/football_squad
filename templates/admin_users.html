@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Admin users{% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="split">
+      <div>
+        <div class="h2">Admin · Users</div>
+        <small class="muted">Set level (1–10) and preferred position (GK/CB/CM/LW/ST etc.).</small>
+      </div>
+      <div class="row">
+        <a class="pill" href="/admin?key={{key}}">Admin</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <table>
+      <tr><th>Name</th><th>Level</th><th>Position</th><th></th></tr>
+      {% for u in users %}
+        <tr>
+          <td>{{u.display_name}}</td>
+          <td style="width:140px">
+            <form class="row" method="post" action="/admin/users/update">
+              <input type="hidden" name="key" value="{{key}}">
+              <input type="hidden" name="user_id" value="{{u.id}}">
+              <input name="level" value="{{u.level}}" style="width:90px">
+          </td>
+          <td style="width:160px">
+              <input name="position" value="{{u.position}}" placeholder="CM" style="width:120px">
+          </td>
+          <td>
+              <button type="submit">Save</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+{% endblock %}

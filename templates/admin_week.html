@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Admin week{% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="split">
+      <div>
+        <div class="h2">Admin · Week {{match.week_start}}</div>
+        <div><b>When:</b> {{match.start_time_text}}</div>
+        <div><b>Where:</b> {{match.location}}</div>
+        <div><b>Cost:</b> £{{match.total_cost}}</div>
+      </div>
+
+      <div class="row">
+        <a class="pill" href="/admin?key={{key}}">Admin</a>
+        <a class="pill" href="/admin/users?key={{key}}">Users</a>
+        <a class="pill" href="/?week={{match.week_start}}">User page</a>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="row">
+      <a class="pill" href="/admin/lineup.png?key={{key}}&week={{match.week_start}}">Open lineup PNG</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="h2">Confirmed</div>
+    <ol>{% for s in confirmed %}<li>{{s.name}}</li>{% endfor %}</ol>
+
+    <hr>
+
+    <div class="h2">Waitlist</div>
+    <ol>{% for s in waitlist %}<li>{{s.name}}</li>{% endfor %}</ol>
+  </div>
+
+  <div class="card">
+    <div class="h2">Lineup preview</div>
+    <img src="/admin/lineup.png?key={{key}}&week={{match.week_start}}" style="max-width:100%;border-radius:16px;border:1px solid var(--border)">
+    <small class="muted">Set player levels/positions in Admin → Users, then refresh.</small>
+  </div>
+{% endblock %}

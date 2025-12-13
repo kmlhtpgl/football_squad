@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}My dashboard{% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="h2">This month ({{yyyymm}})</div>
+    <div class="row">
+      <span class="pill"><b>Owed:</b> £{{owed_month}}</span>
+      <span class="pill"><b>Paid:</b> £{{paid_month}}</span>
+      <span class="pill"><b>Remaining:</b> £{{remaining_month}}</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="h2">All time</div>
+    <div class="row">
+      <span class="pill"><b>Owed:</b> £{{owed_all}}</span>
+      <span class="pill"><b>Paid:</b> £{{paid_all}}</span>
+      <span class="pill"><b>Remaining:</b> £{{remaining_all}}</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="h2">Add payment</div>
+    <form method="post" action="/me/pay" class="row">
+      <input name="amount" placeholder="e.g. 10 or 10.50" required>
+      <input name="note" placeholder="note (optional)">
+      <button class="success" type="submit">Save</button>
+    </form>
+    <small class="muted">Enter what you actually paid.</small>
+  </div>
+
+  <div class="card">
+    <div class="h2">Matches played this month</div>
+    {% if played %}
+      <table>
+        <tr><th>Week</th><th>When</th><th>Where</th><th>Cost</th></tr>
+        {% for m in played %}
+          <tr>
+            <td>{{m.week_start}}</td>
+            <td>{{m.start_time_text}}</td>
+            <td>{{m.location}}</td>
+            <td>£{{m.total_cost}}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <p class="muted">No matches played this month yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="h2">Payments this month</div>
+    {% if payments_fmt %}
+      <table>
+        <tr><th>Date</th><th>Amount</th><th>Note</th></tr>
+        {% for amt, dt, note in payments_fmt %}
+          <tr><td>{{dt}}</td><td>£{{amt}}</td><td>{{note}}</td></tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <p class="muted">No payments recorded this month.</p>
+    {% endif %}
+  </div>
+{% endblock %}

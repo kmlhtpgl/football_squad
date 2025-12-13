@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}History{% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="h2">History</div>
+    <small class="muted">Last 52 weeks</small>
+  </div>
+
+  {% for m in matches %}
+    <div class="card">
+      <div class="split">
+        <div>
+          <div><b>Week:</b> {{m.week_start}}</div>
+          <div class="muted">{{m.start_time_text}} · {{m.location}} · £{{m.total_cost}}</div>
+        </div>
+        <a class="pill" href="/?week={{m.week_start}}">Open</a>
+      </div>
+    </div>
+  {% endfor %}
+{% endblock %}
