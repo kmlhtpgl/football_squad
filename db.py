@@ -1,10 +1,18 @@
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from datetime import datetime
 
+from sqlalchemy import (
+    create_engine,
+    Column, Integer, String, DateTime, Boolean,
+    ForeignKey, UniqueConstraint,
+)
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+
+
+# Use Neon/Render/etc. in production via DATABASE_URL, fallback to local SQLite
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./football.db")
 
-# Neon uses postgres:// but SQLAlchemy expects postgresql://
+# Neon sometimes gives postgres:// but SQLAlchemy wants postgresql://
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
@@ -15,10 +23,10 @@ if DATABASE_URL.startswith("sqlite"):
 engine = create_engine(
     DATABASE_URL,
     connect_args=connect_args,
-    pool_pre_ping=True
+    pool_pre_ping=True,
 )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 
 
@@ -30,7 +38,7 @@ class Schedule(Base):
 
     # 0=Mon ... 6=Sun
     weekday = Column(Integer, default=4)  # Friday
-    time_text = Column(String, default="20:00")
+    time_text = Column(String, default="19:00")
     location = Column(String, default="Pitch")
 
     default_cost = Column(Integer, default=70)  # pounds
@@ -48,10 +56,10 @@ class Match(Base):
     id = Column(Integer, primary_key=True)
     schedule_id = Column(Integer, ForeignKey("schedules.id"))
 
-    # week_start is the Monday of that week (YYYY-MM-DD)
+    # Monday of that week stored as YYYY-MM-DD string
     week_start = Column(String, nullable=False)
 
-    start_time_text = Column(String, default="Fri 20:00")
+    start_time_text = Column(String, default="Fri 19:00")
     location = Column(String, default="Pitch")
     total_cost = Column(Integer, default=70)  # pounds
 
@@ -73,10 +81,11 @@ class User(Base):
     display_name = Column(String, nullable=False, unique=True)
     pin_hash = Column(String, nullable=False)
 
-    # NEW: for team balancing + lineup positions
-    level = Column(Integer, default=5)      # 1..10
-    position = Column(String, default="")   # GK, CB, CM, LW, ST, etc.
+    level = Column(Integer, default=5)
+    position = Column(String, default="")
+
     is_admin = Column(Boolean, default=False)
+
     created_at = Column(DateTime, default=datetime.utcnow)
 
     payments = relationship("Payment", back_populates="user", cascade="all, delete-orphan")
@@ -89,10 +98,7 @@ class Signup(Base):
     match_id = Column(Integer, ForeignKey("matches.id"))
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
-    # keep the name for display + legacy
     name = Column(String, nullable=False)
-
-    # device token (legacy / optional now, but kept)
     token = Column(String, nullable=False)
 
     # confirmed | waitlist
@@ -113,9 +119,7 @@ class Payment(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
 
-    # store in pennies (pence)
     amount_pence = Column(Integer, nullable=False)
-
     paid_at = Column(DateTime, default=datetime.utcnow)
     note = Column(String, default="")
 
@@ -125,7 +129,7 @@ class Payment(Base):
 def init_db():
     Base.metadata.create_all(bind=engine)
 
-    # ensure we always have one default schedule
+    # ensure one default schedule exists
     db = SessionLocal()
     try:
         sched = db.query(Schedule).order_by(Schedule.id.asc()).first()
