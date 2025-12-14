@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 
 from sqlalchemy import (
     create_engine, Column, Integer, String, DateTime, Boolean,
@@ -7,7 +8,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 
-DB_URL = "sqlite:///./football.db"
+DB_URL = os.getenv("DB_URL", "sqlite:///./football.db")
 
 engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)

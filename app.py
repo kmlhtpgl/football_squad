@@ -5,6 +5,7 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta, date
 from decimal import Decimal, ROUND_HALF_UP
+from PIL import Image, ImageDraw, ImageFont
 
 from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -48,6 +49,18 @@ def startup():
 def request_path(request: Request) -> str:
     return request.url.path + (("?" + request.url.query) if request.url.query else "")
 
+def load_font(size: int):
+    # Try common macOS fonts; fallback to default if not found
+    for path in [
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/System/Library/Fonts/Supplemental/Helvetica.ttf",
+        "/Library/Fonts/Arial.ttf",
+    ]:
+        try:
+            return ImageFont.truetype(path, size=size)
+        except Exception:
+            pass
+    return ImageFont.load_default()
 
 def normalize_name(name: str) -> str:
     n = " ".join(name.strip().split())
@@ -235,15 +248,66 @@ def make_lineup_image(teamA, teamB, week, when_text):
     img = Image.new("RGB", (W, H), (22, 110, 68))
     d = ImageDraw.Draw(img)
 
-    # pitch
-    d.rectangle([30, 60, W - 30, H - 30], outline=(240, 255, 245), width=4)
-    d.line([W // 2, 60, W // 2, H - 30], fill=(240, 255, 245), width=4)
-    d.ellipse([W // 2 - 90, H // 2 - 90, W // 2 + 90, H // 2 + 90], outline=(240, 255, 245), width=4)
+    line = (240, 255, 245)
+
+    # fonts (bigger!)
+    title_font = load_font(26)
+    name_font  = load_font(22)   # bigger names
+    pos_font   = load_font(18)   # position inside circle
+
+    # pitch bounds
+    L, T, R, B = 30, 60, W - 30, H - 30
+    d.rectangle([L, T, R, B], outline=line, width=4)
+
+    # halfway line + center circle
+    midx = (L + R) // 2
+    midy = (T + B) // 2
+    d.line([midx, T, midx, B], fill=line, width=4)
+    d.ellipse([midx - 90, midy - 90, midx + 90, midy + 90], outline=line, width=4)
+
+    # --- penalty / goalie boxes ---
+    pitch_w = R - L
+    pitch_h = B - T
+
+    # realistic-ish proportions
+    pen_w = int(pitch_w * 0.18)         # penalty area depth
+    pen_h = int(pitch_h * 0.58)         # penalty area height
+
+    six_w = int(pitch_w * 0.07)         # 6-yard box depth
+    six_h = int(pitch_h * 0.30)         # 6-yard box height
+
+    # left penalty area + 6 yard
+    lp_top = midy - pen_h // 2
+    lp_bot = midy + pen_h // 2
+    d.rectangle([L, lp_top, L + pen_w, lp_bot], outline=line, width=4)
+
+    ls_top = midy - six_h // 2
+    ls_bot = midy + six_h // 2
+    d.rectangle([L, ls_top, L + six_w, ls_bot], outline=line, width=4)
+
+    # right penalty area + 6 yard
+    rp_top = lp_top
+    rp_bot = lp_bot
+    d.rectangle([R - pen_w, rp_top, R, rp_bot], outline=line, width=4)
+    d.rectangle([R - six_w, ls_top, R, ls_bot], outline=line, width=4)
+
+    # penalty spots
+    left_spot_x = L + int(pen_w * 0.6)
+    right_spot_x = R - int(pen_w * 0.6)
+    spot_r = 4
+    d.ellipse([left_spot_x - spot_r, midy - spot_r, left_spot_x + spot_r, midy + spot_r], fill=line)
+    d.ellipse([right_spot_x - spot_r, midy - spot_r, right_spot_x + spot_r, midy + spot_r], fill=line)
 
     # title
-    d.text((40, 18), f"Week {week} · {when_text}", fill=(255, 255, 255))
+    d.text(
+        (40, 18),
+        f"{week} · {when_text}",
+        fill=(255, 255, 255),
+        font=title_font
+    )
 
-    # Coordinates (simple)
+
+    # coordinates (same idea)
     coords_left = {
         "GK": (180, 400),
         "LB": (320, 190), "CB1": (320, 340), "CB2": (320, 460), "RB": (320, 610),
@@ -269,18 +333,31 @@ def make_lineup_image(teamA, teamB, week, when_text):
         usedB.add(base)
         return coords_right[base]
 
-    def draw_player(x, y, name, pos, fill):
-        r = 34
-        d.ellipse([x - r, y - r, x + r, y + r], fill=fill, outline=(255, 255, 255), width=3)
-        d.text((x - 18, y - 10), pos, fill=(10, 10, 10))
-        d.text((x - 60, y + 42), name[:14], fill=(255, 255, 255))
+    def draw_text_centered(x, y, text, font, fill):
+        bbox = d.textbbox((0, 0), text, font=font)
+        tw = bbox[2] - bbox[0]
+        th = bbox[3] - bbox[1]
+        d.text((x - tw // 2, y - th // 2), text, fill=fill, font=font)
 
-    # assign
+    def draw_player(x, y, name, pos, fill):
+        r = 38
+        d.ellipse([x - r, y - r, x + r, y + r], fill=fill, outline=(255, 255, 255), width=4)
+
+        # position centered inside circle
+        draw_text_centered(x, y, pos, pos_font, (10, 10, 10))
+
+        # name below (ALL CAPS, pure black, no outline)
+        nm = name.upper()[:16]
+        draw_text_centered(x, y + 52, nm, name_font, (0, 0, 0))
+
+
+
+    # assign positions (keep your existing assign_positions)
     a_assigned = assign_positions(teamA, FORMATION_433)
     b_assigned = assign_positions(teamB, FORMATION_433)
 
-    d.text((60, 90), "TEAM A", fill=(255, 255, 255))
-    d.text((W - 180, 90), "TEAM B", fill=(255, 255, 255))
+    d.text((60, 90), "TEAM A", fill=(255, 255, 255), font=title_font)
+    d.text((W - 220, 90), "TEAM B", fill=(255, 255, 255), font=title_font)
 
     for p in a_assigned:
         x, y = coord_for(p["slot"], "A")
@@ -291,6 +368,7 @@ def make_lineup_image(teamA, teamB, week, when_text):
         draw_player(x, y, p["name"], p["slot"], (120, 255, 170))
 
     return img
+
 
 
 # -------------------- public --------------------
@@ -638,7 +716,16 @@ def lineup_png(week: str):
             })
 
         teamA, teamB = snake_split(players)
-        img = make_lineup_image(teamA, teamB, week=match.week_start, when_text=match.start_time_text)
+        ws = parse_week_start(match.week_start)           # convert "YYYY-MM-DD" -> date
+        match_day = ws + timedelta(days=sched.weekday)    # now timedelta works
+        match_day_text = match_day.strftime("%a %d %b %Y")
+
+        img = make_lineup_image(
+            teamA,
+            teamB,
+            week=match_day_text,
+            when_text=sched.time_text
+        )
 
         buf = io.BytesIO()
         img.save(buf, format="PNG")
