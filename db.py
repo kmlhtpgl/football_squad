@@ -1,18 +1,24 @@
-from datetime import datetime
 import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-from sqlalchemy import (
-    create_engine, Column, Integer, String, DateTime, Boolean,
-    ForeignKey, UniqueConstraint
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./football.db")
+
+# Neon uses postgres:// but SQLAlchemy expects postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+connect_args = {}
+if DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+
+engine = create_engine(
+    DATABASE_URL,
+    connect_args=connect_args,
+    pool_pre_ping=True
 )
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
-
-DB_URL = os.getenv("DB_URL", "sqlite:///./football.db")
-
-engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
