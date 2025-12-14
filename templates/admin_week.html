@@ -11,8 +11,8 @@
       </div>
 
       <div class="row">
-        <a class="pill" href="/admin?key={{key}}">Admin</a>
-        <a class="pill" href="/admin/users?key={{key}}">Users</a>
+        <a class="pill" href="/admin?">Admin</a>
+        <a class="pill" href="/admin/users?">Users</a>
         <a class="pill" href="/?week={{match.week_start}}">User page</a>
       </div>
     </div>
@@ -20,7 +20,7 @@
     <hr>
 
     <div class="row">
-      <a class="pill" href="/admin/lineup.png?key={{key}}&week={{match.week_start}}">Open lineup PNG</a>
+      <a class="pill" href="/admin/lineup.png?week={{match.week_start}}">Open lineup PNG</a>
     </div>
   </div>
 
@@ -36,7 +36,7 @@
 
   <div class="card">
     <div class="h2">Lineup preview</div>
-    <img src="/admin/lineup.png?key={{key}}&week={{match.week_start}}" style="max-width:100%;border-radius:16px;border:1px solid var(--border)">
+    <img src="/admin/lineup.png?&week={{match.week_start}}" style="max-width:100%;border-radius:16px;border:1px solid var(--border)">
     <small class="muted">Set player levels/positions in Admin → Users, then refresh.</small>
   </div>
 {% endblock %}

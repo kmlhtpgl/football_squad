@@ -793,6 +793,8 @@ def admin_schedule(
     max_players: int = Form(...),
     waitlist_enabled: str = Form(...),
 ):
+    require_admin_user(request)
+
     db = SessionLocal()
     try:
         sched = get_default_schedule(db)
@@ -804,7 +806,7 @@ def admin_schedule(
         sched.max_players = max(1, int(max_players))
         sched.waitlist_enabled = (waitlist_enabled == "1")
         db.commit()
-        return RedirectResponse(url=f"/admin?saved=1", status_code=303)
+        return RedirectResponse(url="/admin?saved=1", status_code=303)
     finally:
         db.close()
 
@@ -812,9 +814,9 @@ def admin_schedule(
 @app.get("/admin/users", response_class=HTMLResponse)
 def admin_users(request: Request):
     user = require_admin_user(request)
+
     db = SessionLocal()
     try:
-        user = get_current_user(request)
         users = db.query(User).order_by(User.display_name.asc()).all()
         tpl = templates.get_template("admin_users.html")
         return tpl.render(
@@ -828,10 +830,13 @@ def admin_users(request: Request):
 
 @app.post("/admin/users/update")
 def admin_users_update(
+    request: Request,
     user_id: int = Form(...),
     level: int = Form(...),
     position: str = Form(...),
 ):
+    require_admin_user(request)
+
     db = SessionLocal()
     try:
         u = db.query(User).filter(User.id == user_id).first()
@@ -839,7 +844,7 @@ def admin_users_update(
             u.level = max(1, min(10, int(level)))
             u.position = (position or "").strip().upper()
             db.commit()
-        return RedirectResponse(url=f"/admin/users?", status_code=303)
+        return RedirectResponse(url="/admin/users", status_code=303)
     finally:
         db.close()
 
@@ -847,13 +852,18 @@ def admin_users_update(
 @app.get("/admin/week", response_class=HTMLResponse)
 def admin_week(request: Request, week: str):
     user = require_admin_user(request)
+
     db = SessionLocal()
     try:
-        user = get_current_user(request)
         sched = get_default_schedule(db)
         match = get_or_create_match(db, sched, parse_week_start(week))
 
-        signups = db.query(Signup).filter(Signup.match_id == match.id).order_by(Signup.created_at.asc()).all()
+        signups = (
+            db.query(Signup)
+            .filter(Signup.match_id == match.id)
+            .order_by(Signup.created_at.asc())
+            .all()
+        )
         confirmed = [s for s in signups if s.status == "confirmed"]
         waitlist = [s for s in signups if s.status == "waitlist"]
 
@@ -870,14 +880,19 @@ def admin_week(request: Request, week: str):
 
 
 @app.get("/admin/lineup.png")
-def admin_lineup_png(week: str):
-    user = require_admin_user(request)
+def admin_lineup_png(request: Request, week: str):
+    require_admin_user(request)
+
     db = SessionLocal()
     try:
         sched = get_default_schedule(db)
         match = get_or_create_match(db, sched, parse_week_start(week))
 
-        signups = db.query(Signup).filter(Signup.match_id == match.id, Signup.status == "confirmed").all()
+        signups = db.query(Signup).filter(
+            Signup.match_id == match.id,
+            Signup.status == "confirmed"
+        ).all()
+
         players = []
         for s in signups:
             if not s.user_id:
@@ -892,7 +907,13 @@ def admin_lineup_png(week: str):
             })
 
         teamA, teamB = snake_split(players)
-        img = make_lineup_image(teamA, teamB, week=match.week_start, when_text=match.start_time_text)
+
+        # show match DAY in the header (Fri 19 Dec 2025), not Monday
+        ws = parse_week_start(match.week_start)
+        match_day = ws + timedelta(days=sched.weekday)
+        match_day_text = match_day.strftime("%a %d %b %Y")
+
+        img = make_lineup_image(teamA, teamB, week=match_day_text, when_text=sched.time_text)
 
         buf = io.BytesIO()
         img.save(buf, format="PNG")
