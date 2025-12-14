@@ -70,7 +70,7 @@ class User(Base):
     # NEW: for team balancing + lineup positions
     level = Column(Integer, default=5)      # 1..10
     position = Column(String, default="")   # GK, CB, CM, LW, ST, etc.
-
+    is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     payments = relationship("Payment", back_populates="user", cascade="all, delete-orphan")

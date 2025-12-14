@@ -4,14 +4,12 @@
   <div class="card">
     <div class="h2">Admin · Weekly defaults</div>
     <div class="row">
-      <a class="pill" href="/admin/users?key={{key}}">Users</a>
-      <a class="pill" href="/admin/week?key={{key}}&week={{today_week}}">This week admin</a>
+      <a class="pill" href="/admin/users">Users</a>
+      <a class="pill" href="/admin/week&week={{today_week}}">This week admin</a>
     </div>
     <hr>
 
-    <form method="post" action="/admin/schedule" class="row">
-      <input type="hidden" name="key" value="{{key}}">
-
+    <form method="post" action="/admin/schedule" class="row">  
       <input name="title" value="{{schedule.title}}" placeholder="Title">
       <input name="default_cost" type="number" value="{{schedule.default_cost}}" style="width:140px">
       <input name="location" value="{{schedule.location}}" placeholder="Location">

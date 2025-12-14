@@ -13,18 +13,34 @@
     <div class="topbar">
       <div class="brand">⚽ Weekly Match</div>
 
-      <div class="nav">
-        {% if user %}
-          <span class="pill">Hi <b>{{user.display_name}}</b></span>
-          <a href="/me">My dashboard</a>
+    <div class="nav">
+      <!-- Always visible -->
+      <a href="/">Home</a>
+
+      {% if user %}
+        <span class="muted">·</span>
+        <span class="pill">Hi <b>{{ user.display_name }}</b></span>
+
+        <span class="muted">·</span>
+        <a href="/me">My dashboard</a>
+
+        {% if user.is_admin %}
           <span class="muted">·</span>
-          <a href="/logout">Logout</a>
-        {% else %}
-          <a href="/login?next={{request_path}}">Login</a>
-          <span class="muted">·</span>
-          <a href="/signup?next={{request_path}}">Sign up</a>
+          <a href="/admin">Admin</a>
         {% endif %}
-      </div>
+
+        <span class="muted">·</span>
+        <a href="/logout">Logout</a>
+      {% else %}
+        <span class="muted">·</span>
+        <a href="/login?next={{ request_path }}">Login</a>
+
+        <span class="muted">·</span>
+        <a href="/signup?next={{ request_path }}">Sign up</a>
+      {% endif %}
+    </div>
+
+
     </div>
 
     {% block content %}{% endblock %}

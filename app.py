@@ -23,7 +23,6 @@ from db import SessionLocal, init_db, Schedule, Match, Signup, User, Payment
 
 # -------------------- config --------------------
 APP_SECRET = os.getenv("APP_SECRET", "change-me-in-prod")
-ADMIN_KEY = os.getenv("ADMIN_KEY", "admin123")
 INVITE_CODE = os.getenv("INVITE_CODE", "")  # set to require invite at signup
 
 serializer = URLSafeSerializer(APP_SECRET, salt="football")
@@ -48,6 +47,12 @@ def startup():
 # -------------------- helpers --------------------
 def request_path(request: Request) -> str:
     return request.url.path + (("?" + request.url.query) if request.url.query else "")
+
+def require_admin_user(request: Request):
+    user = get_current_user(request)
+    if not user or not user.is_admin:
+        raise HTTPException(status_code=403, detail="Admins only")
+    return user
 
 def load_font(size: int):
     # Try common macOS fonts; fallback to default if not found
@@ -569,6 +574,10 @@ def signup(next: str = Form("/"), name: str = Form(...), pin: str = Form(...), i
         ph = pin_hash(pin)
 
         u = User(display_name=clean, pin_hash=ph)
+        # make first user admin automatically
+        if db.query(User).count() == 0:
+            u.is_admin = True
+
         db.add(u)
         db.commit()
         db.refresh(u)
@@ -753,24 +762,18 @@ def me_pay(request: Request, amount: str = Form(...), note: str = Form("")):
 
 
 # -------------------- admin --------------------
-def require_admin(key: str):
-    if key != ADMIN_KEY:
-        raise HTTPException(status_code=403, detail="Forbidden")
-
-
 @app.get("/admin", response_class=HTMLResponse)
-def admin(request: Request, key: str):
-    require_admin(key)
+def admin(request: Request):
+    user = require_admin_user(request)
+
     db = SessionLocal()
     try:
-        user = get_current_user(request)
         sched = get_default_schedule(db)
         today_week = fmt_week(monday_of_week(datetime.utcnow().date()))
 
         tpl = templates.get_template("admin.html")
         return tpl.render(
             schedule=sched,
-            key=key,
             today_week=today_week,
             user=user,
             request_path=request_path(request),
@@ -782,7 +785,6 @@ def admin(request: Request, key: str):
 @app.post("/admin/schedule")
 def admin_schedule(
     request: Request,
-    key: str = Form(...),
     title: str = Form(...),
     weekday: int = Form(...),
     time_text: str = Form(...),
@@ -791,7 +793,6 @@ def admin_schedule(
     max_players: int = Form(...),
     waitlist_enabled: str = Form(...),
 ):
-    require_admin(key)
     db = SessionLocal()
     try:
         sched = get_default_schedule(db)
@@ -803,21 +804,20 @@ def admin_schedule(
         sched.max_players = max(1, int(max_players))
         sched.waitlist_enabled = (waitlist_enabled == "1")
         db.commit()
-        return RedirectResponse(url=f"/admin?key={key}&saved=1", status_code=303)
+        return RedirectResponse(url=f"/admin?saved=1", status_code=303)
     finally:
         db.close()
 
 
 @app.get("/admin/users", response_class=HTMLResponse)
-def admin_users(request: Request, key: str):
-    require_admin(key)
+def admin_users(request: Request):
+    user = require_admin_user(request)
     db = SessionLocal()
     try:
         user = get_current_user(request)
         users = db.query(User).order_by(User.display_name.asc()).all()
         tpl = templates.get_template("admin_users.html")
         return tpl.render(
-            key=key,
             users=users,
             user=user,
             request_path=request_path(request),
@@ -828,12 +828,10 @@ def admin_users(request: Request, key: str):
 
 @app.post("/admin/users/update")
 def admin_users_update(
-    key: str = Form(...),
     user_id: int = Form(...),
     level: int = Form(...),
     position: str = Form(...),
 ):
-    require_admin(key)
     db = SessionLocal()
     try:
         u = db.query(User).filter(User.id == user_id).first()
@@ -841,14 +839,14 @@ def admin_users_update(
             u.level = max(1, min(10, int(level)))
             u.position = (position or "").strip().upper()
             db.commit()
-        return RedirectResponse(url=f"/admin/users?key={key}", status_code=303)
+        return RedirectResponse(url=f"/admin/users?", status_code=303)
     finally:
         db.close()
 
 
 @app.get("/admin/week", response_class=HTMLResponse)
-def admin_week(request: Request, key: str, week: str):
-    require_admin(key)
+def admin_week(request: Request, week: str):
+    user = require_admin_user(request)
     db = SessionLocal()
     try:
         user = get_current_user(request)
@@ -861,7 +859,6 @@ def admin_week(request: Request, key: str, week: str):
 
         tpl = templates.get_template("admin_week.html")
         return tpl.render(
-            key=key,
             match=match,
             confirmed=confirmed,
             waitlist=waitlist,
@@ -873,8 +870,8 @@ def admin_week(request: Request, key: str, week: str):
 
 
 @app.get("/admin/lineup.png")
-def admin_lineup_png(key: str, week: str):
-    require_admin(key)
+def admin_lineup_png(week: str):
+    user = require_admin_user(request)
     db = SessionLocal()
     try:
         sched = get_default_schedule(db)
